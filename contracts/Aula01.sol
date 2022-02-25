@@ -162,3 +162,97 @@ contract Enrollment {
     return enrollments.length - 1;
   }
 }
+
+contract MobilePoints {
+  struct User {
+    uint256 points;
+    bool isRegistered;
+  }
+
+  struct Product {
+    uint256 id;
+    string name;
+    uint256 points;
+    address[] redeems;
+  }
+
+  mapping(address => User) users;
+  mapping(address => uint256[]) redeems;
+  Product[] products;
+
+  address owner;
+
+  modifier onlyOwner {
+    require(msg.sender == owner, "Can only be called by contract owner");
+    _;
+  }
+
+  modifier isRegistered(address _userAddress) {
+    require(users[_userAddress].isRegistered, "User is not registered");
+    _;
+  }
+
+  constructor() {
+    owner = msg.sender;
+
+    address[] memory _addresses;
+
+    products.push(Product(products.length, "Watch", 10, _addresses));
+    products.push(Product(products.length, "Cellphone", 50, _addresses));
+    products.push(Product(products.length, "Computer", 100, _addresses));
+  }
+
+  function register() public isRegistered(msg.sender) {
+    users[msg.sender] = User(2, true);
+  }
+
+  function addPoints(uint256 _points) public isRegistered(msg.sender) {
+    users[msg.sender].points += _points;
+  }
+
+  function getPoints(address _userAddress) public view isRegistered(_userAddress) returns(uint256) {
+    return users[_userAddress].points;
+  }
+
+  function redeemProduct(uint256 _productId) public isRegistered(msg.sender) {
+    User memory _user = users[msg.sender];
+    Product memory _product = products[_productId];
+
+    require(_user.points >= _product.points, "You don't have enough points to redeem this product");
+
+    users[msg.sender].points -= _product.points;
+    products[_productId].redeems.push(msg.sender);
+  }
+
+  function userProducts(address _userAddress) public view isRegistered(_userAddress) returns(Product[] memory) {
+    uint256[] memory _userRedeems = redeems[_userAddress];
+    Product[] memory _products = new Product[](_userRedeems.length);
+
+    for (uint256 i; i < _userRedeems.length; i++) {
+      _products[i] = products[_userRedeems[i]];
+    }
+
+    return _products;
+  }
+
+  function hasProduct(address _userAddress, uint256 _productId) public view isRegistered(_userAddress) returns(bool) {
+    uint256[] memory _userRedeems = redeems[_userAddress];
+    bool _hasProduct = false;
+
+    for (uint256 i; i < _userRedeems.length; i++) {
+      if (_userRedeems[i] == _productId) {
+        _hasProduct = true;
+        break;
+      }
+    }
+
+    return _hasProduct;
+  }
+
+  // This is extra, but I added the functionality to add more products
+  function addProduct(string memory _name, uint256 _points) public onlyOwner {
+    address[] memory _addresses;
+
+    products.push(Product(products.length, _name, _points, _addresses));
+  }
+}
