@@ -14,7 +14,7 @@ contract LifeTracker {
   Person[] people;
   mapping(string => uint256) personNameToId;
 
-  function createPerson(string memory _name, uint8 _age) public payable {
+  function createPerson(string memory _name, uint8 _age) public {
     for (uint256 i = 0; i < people.length; i++) {
       require(keccak256(abi.encodePacked(_name)) != keccak256(abi.encodePacked(people[i].name)));
     }
@@ -54,7 +54,7 @@ contract Counter {
     count = 50;
   }
 
-  function increment() public payable {
+  function increment() public {
     count = count++;
     callers[msg.sender] = callers[msg.sender]++;
   }
@@ -71,7 +71,7 @@ contract Counter {
 contract ArrayChanger {
   uint256[] values;
 
-  function addValue(uint256 _value) public payable {
+  function addValue(uint256 _value) public {
     for (uint256 i = 0; i < values.length; i++) {
       require(_value != values[i]);
     }
@@ -79,7 +79,7 @@ contract ArrayChanger {
     values.push(_value);
   }
 
-  function removeValue(uint256 _value) public payable {
+  function removeValue(uint256 _value) public {
     uint256 _matchIndex;
 
     for (uint256 i = 0; i < values.length; i++) {
@@ -102,7 +102,7 @@ contract AddressStatus {
   mapping(address => Status) addressStatuses;
   mapping(address => uint256) addressChangedAt;
 
-  function setAddressStatus(address _userAddress, Status _status) public payable {
+  function setAddressStatus(address _userAddress, Status _status) public {
     Status _currentStatus = getAddressStatus(_userAddress);
 
     require(block.timestamp - addressChangedAt[_userAddress] >= 30, "Contract can only be changes at least each 30 seconds");
@@ -130,18 +130,35 @@ contract Enrollment {
   struct Student {
     string name;
     uint8 age;
-    uint256 id;
+    bool isEnrolled;
   }
 
-  mapping(address => Student) enrollments;
-  address[] studentList;
+  mapping(address => uint256) enrollmentIds;
+  Student[] enrollments;
 
-  function enroll(string memory _name, uint8 _age) public payable {
+  function enroll(string memory _name, uint8 _age) public {
     require(_age >= 18, "Student age must be at least 18 years old");
-    require(keccak256(abi.encodePacked(_name)) != keccak256(abi.encodePacked("")), "Student name must be present");
+    require(bytes(_name).length > 0, "Student name must be present");
+    require(enrollments[enrollmentIds[msg.sender]].isEnrolled, "Student can only be enrolled once");
 
-    Student memory _student = Student(_name, _age, studentList.length);
+    enrollmentIds[msg.sender] = enrollments.length;
+    enrollments.push(Student(_name, _age, true));
+  }
 
-    enrollments[msg.sender] = _student;
+  function unenroll() public {
+    uint256 _id = enrollmentIds[msg.sender];
+
+    require(enrollments[_id].isEnrolled, "Student not enrolled");
+
+    delete enrollments[_id];
+  }
+
+  function isEnrolled(address _studentAddress) public view returns(bool) {
+    uint256 _id = enrollmentIds[_studentAddress];
+    return enrollments[_id].isEnrolled;
+  }
+
+  function enrollmentsNumber() public view returns(uint256) {
+    return enrollments.length - 1;
   }
 }
