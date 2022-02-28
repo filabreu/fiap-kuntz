@@ -16,7 +16,10 @@ contract LifeTracker {
 
   function createPerson(string memory _name, uint8 _age) public {
     for (uint256 i = 0; i < people.length; i++) {
-      require(keccak256(abi.encodePacked(_name)) != keccak256(abi.encodePacked(people[i].name)));
+      require(
+        keccak256(abi.encodePacked(_name)) != keccak256(abi.encodePacked(people[i].name)),
+        "Person name must be unique"
+      );
     }
 
     uint256 _id = people.length;
@@ -55,8 +58,8 @@ contract Counter {
   }
 
   function increment() public {
-    count = count++;
-    callers[msg.sender] = callers[msg.sender]++;
+    count++;
+    callers[msg.sender]++;
   }
 
   function getCount() public view returns(uint256) {
@@ -69,11 +72,11 @@ contract Counter {
 }
 
 contract ArrayChanger {
-  uint256[] values;
+  uint256[] public values;
 
   function addValue(uint256 _value) public {
     for (uint256 i = 0; i < values.length; i++) {
-      require(_value != values[i]);
+      require(_value != values[i], "Value must be unique");
     }
 
     values.push(_value);
@@ -83,16 +86,16 @@ contract ArrayChanger {
     uint256 _matchIndex;
 
     for (uint256 i = 0; i < values.length; i++) {
-      if (_value != values[i]) {
+      if (_value == values[i]) {
         delete values[i];
         _matchIndex = i;
       }
 
       if (i > _matchIndex) {
-        values[i - 1] = values[i];    
+        values[i - 1] = values[i];
+        delete values[i];
       }
     }
-    values.push(_value);
   }
 }
 
