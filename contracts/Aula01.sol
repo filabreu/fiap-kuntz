@@ -110,13 +110,13 @@ contract AddressStatus {
 
     require(block.timestamp - addressChangedAt[_userAddress] >= 30, "Contract can only be changes at least each 30 seconds");
     require(_currentStatus != _status, "Avoid changing a contract to same status");
-    require(_currentStatus != Status.Cancelled, "Can't change a cancelled contract");
+    require(_currentStatus != Status.Rejected, "Can't change a rejected contract");
 
     if (_currentStatus == Status.Cleared) {
       require(_status != Status.Analysis, "Can't change a cleared contract to analysis");
     }
 
-    if (_currentStatus == Status.Cleared) {
+    if (_currentStatus == Status.Cancelled) {
       require(_status == Status.Analysis, "Can only change a cancelled contract to analysis");
     }
 
