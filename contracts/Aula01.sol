@@ -136,33 +136,31 @@ contract Enrollment {
     bool isEnrolled;
   }
 
-  mapping(address => uint256) enrollmentIds;
-  Student[] enrollments;
+  mapping(address => Student) enrollments;
+  uint256 enrollmentsCount;
 
   function enroll(string memory _name, uint8 _age) public {
     require(_age >= 18, "Student age must be at least 18 years old");
     require(bytes(_name).length > 0, "Student name must be present");
-    require(enrollments[enrollmentIds[msg.sender]].isEnrolled, "Student can only be enrolled once");
+    require(!enrollments[msg.sender].isEnrolled, "Student can only be enrolled once");
 
-    enrollmentIds[msg.sender] = enrollments.length;
-    enrollments.push(Student(_name, _age, true));
+    enrollments[msg.sender] = Student(_name, _age, true);
+    enrollmentsCount += 1;
   }
 
   function unenroll() public {
-    uint256 _id = enrollmentIds[msg.sender];
+    require(enrollments[msg.sender].isEnrolled, "Student not enrolled");
 
-    require(enrollments[_id].isEnrolled, "Student not enrolled");
-
-    delete enrollments[_id];
+    delete enrollments[msg.sender];
+    enrollmentsCount -= 1;
   }
 
   function isEnrolled(address _studentAddress) public view returns(bool) {
-    uint256 _id = enrollmentIds[_studentAddress];
-    return enrollments[_id].isEnrolled;
+    return enrollments[_studentAddress].isEnrolled;
   }
 
   function enrollmentsNumber() public view returns(uint256) {
-    return enrollments.length - 1;
+    return enrollmentsCount;
   }
 }
 
