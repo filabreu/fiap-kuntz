@@ -23,7 +23,7 @@ contract('LifeTracker', (accounts) => {
     const age = 32;
 
     let rejected = false;
-    let errorMsg = ""
+    let errorMsg = "";
 
     await instance.createPerson(name, age, { from: account })
       .catch(error => {

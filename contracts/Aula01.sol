@@ -174,12 +174,12 @@ contract MobilePoints {
     uint256 id;
     string name;
     uint256 points;
-    address[] redeems;
+    bool isRegistered;
   }
 
   mapping(address => User) users;
   mapping(address => uint256[]) redeems;
-  Product[] products;
+  Product[] public products;
 
   address owner;
 
@@ -195,15 +195,10 @@ contract MobilePoints {
 
   constructor() {
     owner = msg.sender;
-
-    address[] memory _addresses;
-
-    products.push(Product(products.length, "Watch", 10, _addresses));
-    products.push(Product(products.length, "Cellphone", 50, _addresses));
-    products.push(Product(products.length, "Computer", 100, _addresses));
   }
 
-  function register() public isRegistered(msg.sender) {
+  function register() public {
+    require(!users[msg.sender].isRegistered, "User is already registered");
     users[msg.sender] = User(2, true);
   }
 
@@ -216,13 +211,15 @@ contract MobilePoints {
   }
 
   function redeemProduct(uint256 _productId) public isRegistered(msg.sender) {
+    require(_productId < products.length, "Product is not registered");
     User memory _user = users[msg.sender];
     Product memory _product = products[_productId];
 
+    require(_product.isRegistered == true, "Product is not registered");
     require(_user.points >= _product.points, "You don't have enough points to redeem this product");
 
     users[msg.sender].points -= _product.points;
-    products[_productId].redeems.push(msg.sender);
+    redeems[msg.sender].push(_productId);
   }
 
   function userProducts(address _userAddress) public view isRegistered(_userAddress) returns(Product[] memory) {
@@ -252,8 +249,11 @@ contract MobilePoints {
 
   // This is extra, but I added the functionality to add more products
   function addProduct(string memory _name, uint256 _points) public onlyOwner {
-    address[] memory _addresses;
+    products.push(Product(products.length, _name, _points, true));
+  }
 
-    products.push(Product(products.length, _name, _points, _addresses));
+  // This is extra, but I added the functionality to remove products
+  function removeProduct(uint256 _productId) public onlyOwner {
+    products[_productId] = Product(0, "", 0, false);
   }
 }
