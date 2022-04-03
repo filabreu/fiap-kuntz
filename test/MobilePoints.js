@@ -23,13 +23,18 @@ contract('MobilePoints', async (accounts) => {
 
   it("should register a User and reward with 2 points", async () => {
     const instance = await MobilePoints.deployed();
-    const account = accounts[0];
 
-    await instance.register({ from: account });
+    await instance.register({ from: accounts[0] });
 
-    const awardedPoints = await instance.getPoints(account);
+    const awardedPoints1 = await instance.getPoints(accounts[0]);
 
-    assert.equal(awardedPoints, 2);
+    assert.equal(awardedPoints1, 2);
+
+    await instance.register({ from: accounts[1] });
+
+    const awardedPoints2 = await instance.getPoints(accounts[1]);
+
+    assert.equal(awardedPoints2, 2);
   });
 
   it("should validate if User is already registered upon registration", async () => {
@@ -66,7 +71,7 @@ contract('MobilePoints', async (accounts) => {
 
   it("should validate User is registered when adding points", async () => {
     const instance = await MobilePoints.deployed();
-    const account = accounts[1];
+    const account = accounts[2];
 
     let rejected = false;
     let errorMsg = "";
@@ -100,7 +105,7 @@ contract('MobilePoints', async (accounts) => {
 
   it("should validate User is registered when redeeming products", async () => {
     const instance = await MobilePoints.deployed();
-    const account = accounts[1];
+    const account = accounts[2];
 
     let rejected = false;
     let errorMsg = ""
@@ -151,18 +156,15 @@ contract('MobilePoints', async (accounts) => {
 
   it("should list User redeemed products", async () => {
     const instance = await MobilePoints.deployed();
-    const account = accounts[0];
 
-    let rejected = false;
-    let errorMsg = ""
+    const productList1 = await instance.userProducts(accounts[0])
 
-    await instance.redeemProduct(2, { from: account })
-      .catch(error => {
-        errorMsg = error;
-        rejected = true;
-      });
+    assert.equal(productList1.length, 1);
+    assert.deepEqual(productList1[0], ["0", "Watch", "10", true ]);
 
-    assert.equal(rejected, true);
-    assert.match(errorMsg, /You don't have enough points to redeem this product/);
+    const productList2 = await instance.userProducts(accounts[1])
+
+    assert.equal(productList2.length, 0);
   });
+  
 });

@@ -247,12 +247,10 @@ contract MobilePoints {
     return _hasProduct;
   }
 
-  // This is extra, but I added the functionality to add more products
   function addProduct(string memory _name, uint256 _points) public onlyOwner {
     products.push(Product(products.length, _name, _points, true));
   }
 
-  // This is extra, but I added the functionality to remove products
   function removeProduct(uint256 _productId) public onlyOwner {
     products[_productId] = Product(0, "", 0, false);
   }
