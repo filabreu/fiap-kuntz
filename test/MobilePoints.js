@@ -166,5 +166,4 @@ contract('MobilePoints', async (accounts) => {
 
     assert.equal(productList2.length, 0);
   });
-  
 });
