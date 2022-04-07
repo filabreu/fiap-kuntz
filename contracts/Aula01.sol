@@ -137,7 +137,7 @@ contract Enrollment {
   }
 
   mapping(address => Student) enrollments;
-  uint256 enrollmentsCount;
+  uint256 enrollmentsCount = 0;
 
   function enroll(string memory _name, uint8 _age) public {
     require(_age >= 18, "Student age must be at least 18 years old");
@@ -145,14 +145,14 @@ contract Enrollment {
     require(!enrollments[msg.sender].isEnrolled, "Student can only be enrolled once");
 
     enrollments[msg.sender] = Student(_name, _age, true);
-    enrollmentsCount += 1;
+    enrollmentsCount++;
   }
 
   function unenroll() public {
     require(enrollments[msg.sender].isEnrolled, "Student not enrolled");
 
     delete enrollments[msg.sender];
-    enrollmentsCount -= 1;
+    enrollmentsCount--;
   }
 
   function isEnrolled(address _studentAddress) public view returns(bool) {
