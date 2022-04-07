@@ -4,6 +4,7 @@ const ArrayChanger = artifacts.require("ArrayChanger");
 const AddressStatus = artifacts.require("AddressStatus");
 const Enrollment = artifacts.require("Enrollment");
 const MobilePoints = artifacts.require("MobilePoints");
+const UserList = artifacts.require("UserList");
 
 module.exports = function(deployer) {
   deployer.deploy(LifeTracker);
@@ -12,4 +13,5 @@ module.exports = function(deployer) {
   deployer.deploy(AddressStatus);
   deployer.deploy(Enrollment);
   deployer.deploy(MobilePoints);
+  deployer.deploy(UserList);
 };
