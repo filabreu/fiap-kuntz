@@ -16,6 +16,7 @@ contract('UserList', async (accounts) => {
 
     assert.equal(log.event, 'UserCreated');
     assert.deepEqual(log.args.user, ["John Doe", "38", "0", true, true, "0"]);
+    assert.approximately(log.args.timestamp.toNumber(), Date.now() / 1000, 1);
   });
 
   it("should validate User address is unique", async () => {
@@ -87,6 +88,7 @@ contract('UserList', async (accounts) => {
     assert.equal(log.args.userAddress, account);
     assert.equal(log.args.from, 0);
     assert.equal(log.args.to, 1);
+    assert.approximately(log.args.timestamp.toNumber(), Date.now() / 1000, 1);
   });
 
   it("should only allow owner to switch a User access", async () => {
@@ -146,6 +148,7 @@ contract('UserList', async (accounts) => {
     assert.equal(log.args.editorAddress, editor);
     assert.deepEqual(log.args.from, ["John Doe", "38", "0", true, true, "0"]);
     assert.deepEqual(log.args.to, ["Jack Smith", "21", "0", true, true, "0"]);
+    assert.approximately(log.args.timestamp.toNumber(), Date.now() / 1000, 1);
   });
 
   it("should only allow editor to update a User", async () => {
@@ -199,37 +202,20 @@ contract('UserList', async (accounts) => {
 
     assert.equal(log.event, "DeactivationRequested");
     assert.equal(log.args.userAddress, account);
+    assert.approximately(log.args.timestamp.toNumber(), Date.now() / 1000, 1);
   });
 
-  it("should allow registered User to request deactivation", async () => {
-    const instance = await UserList.deployed();
-    const account = accounts[1];
-
-    const tx = await instance.requestDeactivation({ from: account });
-
-    const { logs } = tx;
-
-    assert.ok(Array.isArray(logs));
-    assert.equal(logs.length, 1);
-
-    const log = logs[0];
-
-    assert.equal(log.event, "DeactivationRequested");
-    assert.equal(log.args.userAddress, account);
-  });
-
-  it("should validate user is registered User to request deactivation", async () => {
+  it("should validate user is registered to request deactivation", async () => {
     const instance = await UserList.deployed();
     const account = accounts[2];
 
     let rejected = false;
     let errorMsg = ""
 
-    await instance.cancelDeactivation({ from: account })
-      .catch(error => {
-        errorMsg = error;
-        rejected = true;
-      });
+    await instance.requestDeactivation({ from: account }).catch((error) => {
+      errorMsg = error;
+      rejected = true;
+    });
 
     assert.equal(rejected, true);
     assert.match(errorMsg, /You are not registered/);
@@ -250,5 +236,107 @@ contract('UserList', async (accounts) => {
 
     assert.equal(log.event, "DeactivationCanceled");
     assert.equal(log.args.userAddress, account);
+    assert.approximately(log.args.timestamp.toNumber(), Date.now() / 1000, 1);
+  });
+
+  it("should validate User is registered to cancel deactivation", async () => {
+    const instance = await UserList.deployed();
+    const account = accounts[2];
+
+    let rejected = false;
+    let errorMsg = "";
+
+    await instance.cancelDeactivation({ from: account }).catch((error) => {
+      errorMsg = error;
+      rejected = true;
+    });
+
+    assert.equal(rejected, true);
+    assert.match(errorMsg, /You are not registered/);
+  });
+
+  it("should validate User requested deactivation to cancel deactivation", async () => {
+    const instance = await UserList.deployed();
+    const account = accounts[3];
+
+    let rejected = false;
+    let errorMsg = "";
+
+    await instance.cancelDeactivation({ from: account }).catch((error) => {
+      errorMsg = error;
+      rejected = true;
+    });
+
+    assert.equal(rejected, true);
+    assert.match(errorMsg, /Deactivation request do not exist/);
+  });
+
+  it("should only allow Owner to deactivate Users", async () => {
+    const instance = await UserList.deployed();
+    const account = accounts[3];
+    const ownerAccount = accounts[1];
+    let rejected = false;
+    let errorMsg = "";
+
+    await instance.deactivateUser(account, { from: ownerAccount }).catch((error) => {
+      errorMsg = error;
+      rejected = true;
+    });
+
+    assert.equal(rejected, true);
+    assert.match(errorMsg, /Only owner can call this function/);
+  });
+
+  it("should validate User is registered when deactivating", async () => {
+    const instance = await UserList.deployed();
+    const account = accounts[2];
+    const ownerAccount = accounts[0];
+    let rejected = false;
+    let errorMsg = "";
+
+    await instance.deactivateUser(account, { from: ownerAccount }).catch((error) => {
+      errorMsg = error;
+      rejected = true;
+    });
+
+    assert.equal(rejected, true);
+    assert.match(errorMsg, /User is not registered/);
+  });
+
+  it("should validate User requested deactivation after 30 seconds to be deactivated by Owner", async () => {
+    const instance = await UserList.deployed();
+    const account = accounts[3];
+    const ownerAccount = accounts[0];
+
+    await instance.requestDeactivation({ from: account });
+
+    const tx = await instance.deactivateUser(account, { from: ownerAccount }).catch((error) => {
+      errorMsg = error;
+      rejected = true;
+    });
+
+    assert.equal(rejected, true);
+    assert.match(errorMsg, /Deactivation requested less than 30 seconds ago/);
+  });
+
+
+  it("should allow registered User with requested deactivation to be deactivated by Owner after 30 seconds", async () => {
+    const instance = await UserList.deployed();
+    const account = accounts[3];
+    const ownerAccount = accounts[0];
+
+    await new Promise((resolve) => setTimeout(resolve, 30000));
+
+    const tx = await instance.deactivateUser(account, { from: ownerAccount });
+    const { logs } = tx;
+
+    assert.ok(Array.isArray(logs));
+    assert.equal(logs.length, 1);
+
+    const log = logs[0];
+
+    assert.equal(log.event, "UserDeactivated");
+    assert.equal(log.args.userAddress, account);
+    assert.approximately(log.args.timestamp.toNumber(), Date.now() / 1000, 1);
   });
 });

@@ -14,7 +14,7 @@ contract UserList {
     uint256 deactivationRequestedAt;
   }
 
-  event UserCreated(address indexed from, User user);
+  event UserCreated(address indexed from, User user, uint256 timestamp);
   event UserAccessChanged(address indexed userAddress, AccessType from, AccessType to, uint256 timestamp);
   event UserChanged(address indexed userAddress, address editorAddress, User from, User to, uint256 timestamp);
   event DeactivationRequested(address indexed userAddress, uint256 timestamp);
@@ -45,11 +45,6 @@ contract UserList {
     _;
   }
 
-  modifier validAddress(address _address) {
-    require(_address != address(0), "Address cannot be 0 address");
-    _;
-  }
-
   modifier isRegistered(address _userAddress) {
     require(users[_userAddress].isRegistered, "User is not registered");
     _;
@@ -77,7 +72,7 @@ contract UserList {
     User memory _user = User(_name, _age, AccessType.Reader, true, true, 0);
     users[msg.sender] = _user;
 
-    emit UserCreated(msg.sender, _user);
+    emit UserCreated(msg.sender, _user, block.timestamp);
   }
 
   function switchAccess(address _userAddress) public onlyOwner isRegistered(_userAddress) isActive(_userAddress) {
@@ -121,7 +116,7 @@ contract UserList {
     emit DeactivationCanceled(msg.sender, block.timestamp);
   }
 
-  function deactivateUser(address _userAddress) public onlyOwner isRegistered(_userAddress) isActive(_userAddress) validAddress(_userAddress) {
+  function deactivateUser(address _userAddress) public onlyOwner isRegistered(_userAddress) isActive(_userAddress) {
     require(block.timestamp - users[_userAddress].deactivationRequestedAt >= 30, "Deactivation requested less than 30 seconds ago");
 
     users[_userAddress].isActive = false;
