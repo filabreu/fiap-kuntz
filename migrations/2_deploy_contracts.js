@@ -5,6 +5,7 @@ const AddressStatus = artifacts.require("AddressStatus");
 const Enrollment = artifacts.require("Enrollment");
 const MobilePoints = artifacts.require("MobilePoints");
 const UserList = artifacts.require("UserList");
+const CrowdFunding = artifacts.require("CrowdFunding");
 
 module.exports = function(deployer) {
   deployer.deploy(LifeTracker);
@@ -14,4 +15,5 @@ module.exports = function(deployer) {
   deployer.deploy(Enrollment);
   deployer.deploy(MobilePoints);
   deployer.deploy(UserList);
+  deployer.deploy(CrowdFunding);
 };

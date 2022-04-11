@@ -146,7 +146,7 @@ contract CrowdFunding {
 
   event CampaignCreated(uint256 id, address creator, uint256 createdAtTimestamp);
   event CampaignUpdated(uint256 id, address creator, string field, uint256 updatedAtTimestamp);
-  event DonationSent(uint256 campaignId, address donor, uint256 donatedValueInWei, uint256 donatedAtTimestamp);
+  event DonationReceived(uint256 campaignId, address donor, uint256 donatedValueInWei, uint256 donatedAtTimestamp);
   event DonationWithdrawn(uint256 campaignId, address donor, uint256 withdrawnValueInWei, uint256 withdrawnAtTimestamp);
   event DonationReturned(uint256 campaignId, address creator, address donor, uint256 returnedValueInWei, uint256 returnedAtTimestamp);
 
@@ -165,7 +165,7 @@ contract CrowdFunding {
     if (!_isOwnerOrAuditor) {
       address[5] memory _auditors = campaignAuditors[_campaignId];
 
-      for (uint256 _i = 0; _i < _auditors.length; _i++) {
+      for (uint256 _i = 0; _i < 5; _i++) {
         if (_auditors[_i] == msg.sender) {
           _isOwnerOrAuditor = true;
           break;
@@ -208,7 +208,7 @@ contract CrowdFunding {
 
     campaigns[_campaignId] = _campaign;
 
-    emit CampaignUpdated(campaignIdCounter, msg.sender, "startTimestamp", block.timestamp);
+    emit CampaignUpdated(_campaignId, msg.sender, "startTimestamp", block.timestamp);
   }
 
   function setCampaignEndTimestamp(uint256 _campaignId, uint256 _newTimestamp) public onlyCampaignOwner(_campaignId) {
@@ -218,7 +218,7 @@ contract CrowdFunding {
 
     campaigns[_campaignId] = _campaign;
 
-    emit CampaignUpdated(campaignIdCounter, msg.sender, "endTimestamp", block.timestamp);
+    emit CampaignUpdated(_campaignId, msg.sender, "endTimestamp", block.timestamp);
   }
 
   function setCampaignTargetValue(uint256 _campaignId, uint256 _newTargetValue) public onlyCampaignOwner(_campaignId) {
@@ -226,13 +226,13 @@ contract CrowdFunding {
 
     uint256 _raisedValueInWei = campaignTreasury[_campaignId];
 
-    require(_raisedValueInWei >= _newTargetValue, "New target value must be equal or greater than raised value");
+    require(_newTargetValue >= _raisedValueInWei, "New target value must be equal or greater than raised value");
 
     _campaign.targetValueInWei = _newTargetValue;
 
     campaigns[_campaignId] = _campaign;
 
-    emit CampaignUpdated(campaignIdCounter, msg.sender, "targetValueInWei", block.timestamp);
+    emit CampaignUpdated(_campaignId, msg.sender, "targetValueInWei", block.timestamp);
   }
 
   function setCampaignTreasurer(uint256 _campaignId, address _treasurer) public onlyCampaignOwner(_campaignId) {
@@ -246,19 +246,19 @@ contract CrowdFunding {
     return (_campaign.targetValueInWei, raisedValueInWei);
   }
 
-  function donateToCampaign(uint256 _campaignId, uint256 _valueInWei) public payable {
-    require(msg.value == 250000000 gwei, "Must be at least 0.25 ether");
+  function donateToCampaign(uint256 _campaignId) public payable {
+    require(msg.value >= 250000000 gwei, "Must donate at least 0.25 ether");
 
     Campaign memory _campaign = campaigns[_campaignId];
 
-    require(_campaign.startTimestamp > block.timestamp, "Campaign has not started yet");
-    require(_campaign.endTimestamp < block.timestamp, "Campaign has ended");
+    require(_campaign.startTimestamp < block.timestamp, "Campaign has not started yet");
+    require(_campaign.endTimestamp > block.timestamp, "Campaign has ended");
 
-    emit DonationSent(_campaignId, msg.sender, _valueInWei, block.timestamp);
+    emit DonationReceived(_campaignId, msg.sender, msg.value, block.timestamp);
 
     campaignDonors[_campaignId].push(msg.sender);
-    campaignTreasury[_campaignId] += _valueInWei;
-    campaignDonations[_campaignId][msg.sender] += _valueInWei;
+    campaignTreasury[_campaignId] += msg.value;
+    campaignDonations[_campaignId][msg.sender] += msg.value;
   }
 
   function withdrawDonation(uint256 _campaignId) public {
